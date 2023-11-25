@@ -848,9 +848,29 @@ controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
     direction = 4
 })
+function Make_inventory () {
+    inventory = Inventory.create_inventory([], 32)
+    inventory.setFlag(SpriteFlag.RelativeToCamera, true)
+    inventory.setFlag(SpriteFlag.Invisible, true)
+    inventory.left = 4
+    inventory.top = 4
+    inventory.z = 50
+}
+controller.menu.onEvent(ControllerButtonEvent.Pressed, function () {
+    inventory.setFlag(SpriteFlag.Invisible, false)
+})
+function make_toolbar () {
+    toolbar = Inventory.create_toolbar([], 1)
+    toolbar.setFlag(SpriteFlag.RelativeToCamera, true)
+    toolbar.left = 4
+    toolbar.bottom = scene.screenHeight() - 4
+    toolbar.z = 50
+}
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, otherSprite) {
     sprites.destroy(myEnemy)
 })
+let toolbar: Inventory.Toolbar = null
+let inventory: Inventory.Inventory = null
 let projectile4: Sprite = null
 let Projectile3: Sprite = null
 let projectile2: Sprite = null
@@ -858,6 +878,8 @@ let projectile: Sprite = null
 let direction = 0
 let myEnemy: Sprite = null
 let mySprite: Sprite = null
+make_toolbar()
+Make_inventory()
 mySprite = sprites.create(assets.image`up arrow`, SpriteKind.Player)
 myEnemy = sprites.create(img`
     . . . . . . . . . . b 5 b . . . 
@@ -1004,8 +1026,9 @@ scene.setBackgroundImage(img`
     `)
 let statusbar = statusbars.create(40, 10, StatusBarKind.Health)
 statusbar.setStatusBarFlag(StatusBarFlag.SmoothTransition, true)
-statusbar.positionDirection(CollisionDirection.Top)
 statusbar.setBarBorder(2, 15)
+statusbar.left = 4
+statusbar.top = 4
 // basic movements
 forever(function () {
     while (controller.right.isPressed()) {

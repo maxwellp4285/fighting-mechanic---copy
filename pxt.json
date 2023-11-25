@@ -4,7 +4,8 @@
     "dependencies": {
         "device": "*",
         "pxt-status-bar": "github:jwunderl/pxt-status-bar#v0.4.2",
-        "Asset Farming": "github:jardfecci/asset-farming#b65a87d9f405bbd5a05a52a9fc1aadab5f6a08a0"
+        "Asset Farming": "github:jardfecci/asset-farming#b65a87d9f405bbd5a05a52a9fc1aadab5f6a08a0",
+        "Inventory": "github:UnsignedArduino/Inventory#v1.1.1"
     },
     "files": [
         "main.blocks",
