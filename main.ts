@@ -1,9 +1,31 @@
 namespace SpriteKind {
     export const hurt = SpriteKind.create()
+    export const item = SpriteKind.create()
+    export const weapon = SpriteKind.create()
 }
 controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
     direction = 3
 })
+function add_weapon (item_in_list: Inventory.Item[]) {
+    for (let item of toolbar.get_items()) {
+        if (item.get_image().equals(item_in_list[0].get_image())) {
+            if (item.get_text(ItemTextAttribute.Tooltip) == "") {
+                item.set_text(ItemTextAttribute.Tooltip, "2")
+            } else {
+                item.set_text(ItemTextAttribute.Tooltip, convertToText(parseFloat(item.get_text(ItemTextAttribute.Tooltip)) + 1))
+            }
+            toolbar.update()
+            return true
+        }
+    }
+    if (toolbar.get_items().length < toolbar.get_number(ToolbarNumberAttribute.MaxItems)) {
+        toolbar.get_items().push(item_in_list[0])
+        item_in_list[0].set_text(ItemTextAttribute.Tooltip, "")
+        toolbar.update()
+        return true
+    }
+    return false
+}
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
     if (direction == 2) {
         animation.runImageAnimation(
@@ -323,7 +345,6 @@ controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
     }
 })
 function remove_item_from_toolbar (index: number) {
-    let index = 0
     item = toolbar.get_items()[index]
     if (!(item)) {
         return [][0]
@@ -857,12 +878,33 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
     direction = 1
 })
+sprites.onOverlap(SpriteKind.Player, SpriteKind.item, function (sprite, otherSprite) {
+    for (let index = 0; index <= all_items.length - 1; index++) {
+        if (otherSprite.image.equals(all_items[index])) {
+            if (add_item([Inventory.create_item(all_labels[index], all_items[index])])) {
+                sprites.destroy(otherSprite)
+                spawn_weapon()
+                break;
+            }
+        }
+    }
+})
+function spawn_item () {
+    item_drop = sprites.create(all_items._pickRandom(), SpriteKind.item)
+    item_drop.setPosition(randint(0, scene.screenWidth()), randint(0, scene.screenHeight()))
+    item_drop.lifespan = 5000
+}
 statusbars.onZero(StatusBarKind.Health, function (status) {
     sprites.destroy(mySprite)
 })
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
     direction = 2
 })
+function give_item (idx: number) {
+    item_drop = sprites.create(all_items[idx], SpriteKind.item)
+    item_drop.setPosition(mySprite.x, mySprite.y)
+    item_drop.lifespan = 5000
+}
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
     direction = 4
 })
@@ -877,6 +919,28 @@ function Make_inventory () {
 controller.menu.onEvent(ControllerButtonEvent.Pressed, function () {
     inventory.setFlag(SpriteFlag.Invisible, false)
 })
+function spawn_weapon () {
+    weapon_drop = sprites.create(img`
+        4 4 4 . . 4 4 4 4 4 . . . . . . 
+        4 5 5 4 4 5 5 5 5 5 4 4 . . . . 
+        b 4 5 5 1 5 1 1 1 5 5 5 4 . . . 
+        . b 5 5 5 5 1 1 5 5 1 1 5 4 . . 
+        . b d 5 5 5 5 5 5 5 5 1 1 5 4 . 
+        b 4 5 5 5 5 5 5 5 5 5 5 1 5 4 . 
+        c d 5 5 5 5 5 5 5 5 5 5 5 5 5 4 
+        c d 4 5 5 5 5 5 5 5 5 5 5 1 5 4 
+        c 4 5 5 5 d 5 5 5 5 5 5 5 5 5 4 
+        c 4 d 5 4 5 d 5 5 5 5 5 5 5 5 4 
+        . c 4 5 5 5 5 d d d 5 5 5 5 5 b 
+        . c 4 d 5 4 5 d 4 4 d 5 5 5 4 c 
+        . . c 4 4 d 4 4 4 4 4 d d 5 d c 
+        . . . c 4 4 4 4 4 4 4 4 5 5 5 4 
+        . . . . c c b 4 4 4 b b 4 5 4 4 
+        . . . . . . c c c c c c b b 4 . 
+        `, SpriteKind.weapon)
+    weapon_drop.setPosition(mySprite + 15, mySprite + 15)
+    weapon_drop.lifespan = 10000
+}
 function make_toolbar () {
     toolbar = Inventory.create_toolbar([], 1)
     toolbar.setFlag(SpriteFlag.RelativeToCamera, true)
@@ -892,19 +956,7 @@ function make_inventory_toolbar () {
     make_toolbar()
     Make_inventory()
 }
-function add_item (item_in_list: number) {
-    let item_in_list: Inventory.Item[] = []
-    for (let item of toolbar.get_items()) {
-        if (item.get_image().equals(item_in_list[0].get_image())) {
-            if (item.get_text(ItemTextAttribute.Tooltip) == "") {
-                item.set_text(ItemTextAttribute.Tooltip, "2")
-            } else {
-                item.set_text(ItemTextAttribute.Tooltip, convertToText(parseFloat(item.get_text(ItemTextAttribute.Tooltip)) + 1))
-            }
-            toolbar.update()
-            return true
-        }
-    }
+function add_item (item_in_list: Inventory.Item[]) {
     for (let item of inventory.get_items()) {
         if (item.get_image().equals(item_in_list[0].get_image())) {
             if (item.get_text(ItemTextAttribute.Tooltip) == "") {
@@ -916,12 +968,6 @@ function add_item (item_in_list: number) {
             return true
         }
     }
-    if (toolbar.get_items().length < toolbar.get_number(ToolbarNumberAttribute.MaxItems)) {
-        toolbar.get_items().push(item_in_list[0])
-        item_in_list[0].set_text(ItemTextAttribute.Tooltip, "")
-        toolbar.update()
-        return true
-    }
     if (inventory.get_items().length < inventory.get_number(InventoryNumberAttribute.MaxItems)) {
         inventory.get_items().push(item_in_list[0])
         item_in_list[0].set_text(ItemTextAttribute.Tooltip, "")
@@ -930,6 +976,21 @@ function add_item (item_in_list: number) {
     }
     return false
 }
+sprites.onOverlap(SpriteKind.Player, SpriteKind.weapon, function (sprite, otherSprite) {
+    for (let index = 0; index <= all_weapons.length - 1; index++) {
+        if (otherSprite.image.equals(all_weapons[index])) {
+            if (add_weapon([Inventory.create_item(weapon_labels[index], all_weapons[index])])) {
+                sprites.destroy(otherSprite)
+                break;
+            }
+        }
+    }
+})
+function give_weapon (idx: number) {
+    weapon_drop = sprites.create(all_weapons[idx], SpriteKind.weapon)
+    weapon_drop.setPosition(mySprite.x, mySprite.y)
+    weapon_drop.lifespan = 5000
+}
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, otherSprite) {
     sprites.destroy(myEnemy)
 })
@@ -937,14 +998,20 @@ let last_inventory_select = 0
 let last_toolbar_select = 0
 let cursor_in_inventory = false
 let in_inventory = false
+let weapon_drop: Sprite = null
 let inventory: Inventory.Inventory = null
+let item_drop: Sprite = null
 let projectile4: Sprite = null
 let Projectile3: Sprite = null
 let projectile2: Sprite = null
 let projectile: Sprite = null
-let toolbar: Inventory.Toolbar = null
 let item: Inventory.Item = null
+let toolbar: Inventory.Toolbar = null
 let direction = 0
+let weapon_labels: string[] = []
+let all_weapons: Image[] = []
+let all_labels: string[] = []
+let all_items: Image[] = []
 let myEnemy: Sprite = null
 let mySprite: Sprite = null
 make_toolbar()
@@ -1098,6 +1165,57 @@ statusbar.setStatusBarFlag(StatusBarFlag.SmoothTransition, true)
 statusbar.setBarBorder(2, 15)
 statusbar.left = 30
 statusbar.bottom = 112
+all_items = [img`
+    . . . . c c c b b b b b . . . . 
+    . . c c b 4 4 4 4 4 4 b b b . . 
+    . c c 4 4 4 4 4 5 4 4 4 4 b c . 
+    . e 4 4 4 4 4 4 4 4 4 5 4 4 e . 
+    e b 4 5 4 4 5 4 4 4 4 4 4 4 b c 
+    e b 4 4 4 4 4 4 4 4 4 4 5 4 4 e 
+    e b b 4 4 4 4 4 4 4 4 4 4 4 b e 
+    . e b 4 4 4 4 4 5 4 4 4 4 b e . 
+    8 7 e e b 4 4 4 4 4 4 b e e 6 8 
+    8 7 2 e e e e e e e e e e 2 7 8 
+    e 6 6 2 2 2 2 2 2 2 2 2 2 6 c e 
+    e c 6 7 6 6 7 7 7 6 6 7 6 c c e 
+    e b e 8 8 c c 8 8 c c c 8 e b e 
+    e e b e c c e e e e e c e b e e 
+    . e e b b 4 4 4 4 4 4 4 4 e e . 
+    . . . c c c c c e e e e e . . . 
+    `]
+all_labels = ["Burger"]
+for (let index = 0; index <= all_items.length - 1; index++) {
+    for (let index2 = 0; index2 < 3; index2++) {
+        give_item(index)
+    }
+}
+all_weapons = [img`
+    . . . . . . b b b b . . . . . . 
+    . . . . . . b 4 4 4 b . . . . . 
+    . . . . . . b b 4 4 4 b . . . . 
+    . . . . . b 4 b b b 4 4 b . . . 
+    . . . . b d 5 5 5 4 b 4 4 b . . 
+    . . . . b 3 2 3 5 5 4 e 4 4 b . 
+    . . . b d 2 2 2 5 7 5 4 e 4 4 e 
+    . . . b 5 3 2 3 5 5 5 5 e e e e 
+    . . b d 7 5 5 5 3 2 3 5 5 e e e 
+    . . b 5 5 5 5 5 2 2 2 5 5 d e e 
+    . b 3 2 3 5 7 5 3 2 3 5 d d e 4 
+    . b 2 2 2 5 5 5 5 5 5 d d e 4 . 
+    b d 3 2 d 5 5 5 d d d 4 4 . . . 
+    b 5 5 5 5 d d 4 4 4 4 . . . . . 
+    4 d d d 4 4 4 . . . . . . . . . 
+    4 4 4 4 . . . . . . . . . . . . 
+    `]
+weapon_labels = ["pizza"]
+for (let index = 0; index <= all_weapons.length - 1; index++) {
+    for (let index2 = 0; index2 < 3; index2++) {
+        give_weapon(index)
+    }
+}
+game.onUpdateInterval(1000, function () {
+    spawn_item()
+})
 // basic movements
 forever(function () {
     while (controller.right.isPressed()) {
