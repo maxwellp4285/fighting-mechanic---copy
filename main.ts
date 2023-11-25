@@ -322,6 +322,24 @@ controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
         mySprite.vy = 0
     }
 })
+function remove_item_from_toolbar (index: number) {
+    let index = 0
+    item = toolbar.get_items()[index]
+    if (!(item)) {
+        return [][0]
+    }
+    if (item.get_text(ItemTextAttribute.Tooltip) == "") {
+        if (toolbar.get_items().removeAt(0)) {
+        	
+        }
+    } else if (item.get_text(ItemTextAttribute.Tooltip) == "2") {
+        item.set_text(ItemTextAttribute.Tooltip, "")
+    } else {
+        item.set_text(ItemTextAttribute.Tooltip, convertToText(parseFloat(item.get_text(ItemTextAttribute.Tooltip)) - 1))
+    }
+    toolbar.update()
+    return Inventory.create_item(item.get_text(ItemTextAttribute.Name), item.get_image())
+}
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     if (direction == 2) {
         projectile = sprites.createProjectileFromSprite(img`
@@ -866,15 +884,66 @@ function make_toolbar () {
     toolbar.bottom = scene.screenHeight() - 4
     toolbar.z = 50
 }
+function make_inventory_toolbar () {
+    in_inventory = false
+    cursor_in_inventory = false
+    last_toolbar_select = 0
+    last_inventory_select = 0
+    make_toolbar()
+    Make_inventory()
+}
+function add_item (item_in_list: number) {
+    let item_in_list: Inventory.Item[] = []
+    for (let item of toolbar.get_items()) {
+        if (item.get_image().equals(item_in_list[0].get_image())) {
+            if (item.get_text(ItemTextAttribute.Tooltip) == "") {
+                item.set_text(ItemTextAttribute.Tooltip, "2")
+            } else {
+                item.set_text(ItemTextAttribute.Tooltip, convertToText(parseFloat(item.get_text(ItemTextAttribute.Tooltip)) + 1))
+            }
+            toolbar.update()
+            return true
+        }
+    }
+    for (let item of inventory.get_items()) {
+        if (item.get_image().equals(item_in_list[0].get_image())) {
+            if (item.get_text(ItemTextAttribute.Tooltip) == "") {
+                item.set_text(ItemTextAttribute.Tooltip, "2")
+            } else {
+                item.set_text(ItemTextAttribute.Tooltip, convertToText(parseFloat(item.get_text(ItemTextAttribute.Tooltip)) + 1))
+            }
+            inventory.update()
+            return true
+        }
+    }
+    if (toolbar.get_items().length < toolbar.get_number(ToolbarNumberAttribute.MaxItems)) {
+        toolbar.get_items().push(item_in_list[0])
+        item_in_list[0].set_text(ItemTextAttribute.Tooltip, "")
+        toolbar.update()
+        return true
+    }
+    if (inventory.get_items().length < inventory.get_number(InventoryNumberAttribute.MaxItems)) {
+        inventory.get_items().push(item_in_list[0])
+        item_in_list[0].set_text(ItemTextAttribute.Tooltip, "")
+        inventory.update()
+        return true
+    }
+    return false
+}
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, otherSprite) {
     sprites.destroy(myEnemy)
 })
-let toolbar: Inventory.Toolbar = null
+let last_inventory_select = 0
+let last_toolbar_select = 0
+let cursor_in_inventory = false
+let in_inventory = false
 let inventory: Inventory.Inventory = null
 let projectile4: Sprite = null
 let Projectile3: Sprite = null
 let projectile2: Sprite = null
 let projectile: Sprite = null
+let toolbar: Inventory.Toolbar = null
+let item: Inventory.Item = null
 let direction = 0
 let myEnemy: Sprite = null
 let mySprite: Sprite = null
@@ -1027,8 +1096,8 @@ scene.setBackgroundImage(img`
 let statusbar = statusbars.create(40, 10, StatusBarKind.Health)
 statusbar.setStatusBarFlag(StatusBarFlag.SmoothTransition, true)
 statusbar.setBarBorder(2, 15)
-statusbar.left = 4
-statusbar.top = 4
+statusbar.left = 30
+statusbar.bottom = 112
 // basic movements
 forever(function () {
     while (controller.right.isPressed()) {
