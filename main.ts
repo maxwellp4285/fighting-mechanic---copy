@@ -361,6 +361,9 @@ function remove_item_from_toolbar (index: number) {
     toolbar.update()
     return Inventory.create_item(item.get_text(ItemTextAttribute.Name), item.get_image())
 }
+controller.anyButton.onEvent(ControllerButtonEvent.Pressed, function () {
+    inventory.setFlag(SpriteFlag.Invisible, true)
+})
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     if (direction == 2) {
         projectile = sprites.createProjectileFromSprite(img`
@@ -883,17 +886,11 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.item, function (sprite, otherSpr
         if (otherSprite.image.equals(all_items[index])) {
             if (add_item([Inventory.create_item(all_labels[index], all_items[index])])) {
                 sprites.destroy(otherSprite)
-                spawn_weapon()
                 break;
             }
         }
     }
 })
-function spawn_item () {
-    item_drop = sprites.create(all_items._pickRandom(), SpriteKind.item)
-    item_drop.setPosition(randint(0, scene.screenWidth()), randint(0, scene.screenHeight()))
-    item_drop.lifespan = 5000
-}
 statusbars.onZero(StatusBarKind.Health, function (status) {
     sprites.destroy(mySprite)
 })
@@ -919,27 +916,12 @@ function Make_inventory () {
 controller.menu.onEvent(ControllerButtonEvent.Pressed, function () {
     inventory.setFlag(SpriteFlag.Invisible, false)
 })
-function spawn_weapon () {
-    weapon_drop = sprites.create(img`
-        4 4 4 . . 4 4 4 4 4 . . . . . . 
-        4 5 5 4 4 5 5 5 5 5 4 4 . . . . 
-        b 4 5 5 1 5 1 1 1 5 5 5 4 . . . 
-        . b 5 5 5 5 1 1 5 5 1 1 5 4 . . 
-        . b d 5 5 5 5 5 5 5 5 1 1 5 4 . 
-        b 4 5 5 5 5 5 5 5 5 5 5 1 5 4 . 
-        c d 5 5 5 5 5 5 5 5 5 5 5 5 5 4 
-        c d 4 5 5 5 5 5 5 5 5 5 5 1 5 4 
-        c 4 5 5 5 d 5 5 5 5 5 5 5 5 5 4 
-        c 4 d 5 4 5 d 5 5 5 5 5 5 5 5 4 
-        . c 4 5 5 5 5 d d d 5 5 5 5 5 b 
-        . c 4 d 5 4 5 d 4 4 d 5 5 5 4 c 
-        . . c 4 4 d 4 4 4 4 4 d d 5 d c 
-        . . . c 4 4 4 4 4 4 4 4 5 5 5 4 
-        . . . . c c b 4 4 4 b b 4 5 4 4 
-        . . . . . . c c c c c c b b 4 . 
-        `, SpriteKind.weapon)
-    weapon_drop.setPosition(mySprite + 15, mySprite + 15)
-    weapon_drop.lifespan = 10000
+function spawn_weapon (weapon_Sprite: Sprite) {
+    if (mySprite.y < 60) {
+        weapon_Sprite.setPosition(mySprite.x, mySprite.y + 30)
+    } else if (mySprite.y > 60) {
+        weapon_Sprite.setPosition(mySprite.x, mySprite.y - 30)
+    }
 }
 function make_toolbar () {
     toolbar = Inventory.create_toolbar([], 1)
@@ -978,6 +960,17 @@ function add_item (item_in_list: Inventory.Item[]) {
 }
 sprites.onOverlap(SpriteKind.Player, SpriteKind.weapon, function (sprite, otherSprite) {
     for (let index = 0; index <= all_weapons.length - 1; index++) {
+        for (let item of toolbar.get_items()) {
+            if (item.image == all_weapons[index]) {
+                if (toolbar.get_items() != []) {
+                    toolbar.set_items([])
+                }
+                mySprite3 = sprites.create(all_weapons[index], SpriteKind.weapon)
+                spawn_weapon(mySprite3)
+                pause(100)
+                break;
+            }
+        }
         if (otherSprite.image.equals(all_weapons[index])) {
             if (add_weapon([Inventory.create_item(weapon_labels[index], all_weapons[index])])) {
                 sprites.destroy(otherSprite)
@@ -988,23 +981,24 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.weapon, function (sprite, otherS
 })
 function give_weapon (idx: number) {
     weapon_drop = sprites.create(all_weapons[idx], SpriteKind.weapon)
-    weapon_drop.setPosition(mySprite.x, mySprite.y)
-    weapon_drop.lifespan = 5000
+    weapon_drop.setPosition(mySprite.x + 10, mySprite.y + 10)
+    weapon_drop.lifespan = 1000000
 }
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, otherSprite) {
     sprites.destroy(myEnemy)
 })
+let weapon_drop: Sprite = null
+let mySprite3: Sprite = null
 let last_inventory_select = 0
 let last_toolbar_select = 0
 let cursor_in_inventory = false
 let in_inventory = false
-let weapon_drop: Sprite = null
-let inventory: Inventory.Inventory = null
 let item_drop: Sprite = null
 let projectile4: Sprite = null
 let Projectile3: Sprite = null
 let projectile2: Sprite = null
 let projectile: Sprite = null
+let inventory: Inventory.Inventory = null
 let item: Inventory.Item = null
 let toolbar: Inventory.Toolbar = null
 let direction = 0
@@ -1184,11 +1178,6 @@ all_items = [img`
     . . . c c c c c e e e e e . . . 
     `]
 all_labels = ["Burger"]
-for (let index = 0; index <= all_items.length - 1; index++) {
-    for (let index2 = 0; index2 < 3; index2++) {
-        give_item(index)
-    }
-}
 all_weapons = [img`
     . . . . . . b b b b . . . . . . 
     . . . . . . b 4 4 4 b . . . . . 
@@ -1206,16 +1195,25 @@ all_weapons = [img`
     b 5 5 5 5 d d 4 4 4 4 . . . . . 
     4 d d d 4 4 4 . . . . . . . . . 
     4 4 4 4 . . . . . . . . . . . . 
+    `, img`
+    4 4 4 . . 4 4 4 4 4 . . . . . . 
+    4 5 5 4 4 5 5 5 5 5 4 4 . . . . 
+    b 4 5 5 1 5 1 1 1 5 5 5 4 . . . 
+    . b 5 5 5 5 1 1 5 5 1 1 5 4 . . 
+    . b d 5 5 5 5 5 5 5 5 1 1 5 4 . 
+    b 4 5 5 5 5 5 5 5 5 5 5 1 5 4 . 
+    c d 5 5 5 5 5 5 5 5 5 5 5 5 5 4 
+    c d 4 5 5 5 5 5 5 5 5 5 5 1 5 4 
+    c 4 5 5 5 d 5 5 5 5 5 5 5 5 5 4 
+    c 4 d 5 4 5 d 5 5 5 5 5 5 5 5 4 
+    . c 4 5 5 5 5 d d d 5 5 5 5 5 b 
+    . c 4 d 5 4 5 d 4 4 d 5 5 5 4 c 
+    . . c 4 4 d 4 4 4 4 4 d d 5 d c 
+    . . . c 4 4 4 4 4 4 4 4 5 5 5 4 
+    . . . . c c b 4 4 4 b b 4 5 4 4 
+    . . . . . . c c c c c c b b 4 . 
     `]
-weapon_labels = ["pizza"]
-for (let index = 0; index <= all_weapons.length - 1; index++) {
-    for (let index2 = 0; index2 < 3; index2++) {
-        give_weapon(index)
-    }
-}
-game.onUpdateInterval(1000, function () {
-    spawn_item()
-})
+weapon_labels = ["pizza", "lemon"]
 // basic movements
 forever(function () {
     while (controller.right.isPressed()) {
