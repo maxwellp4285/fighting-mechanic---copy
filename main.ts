@@ -891,6 +891,9 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.item, function (sprite, otherSpr
         }
     }
 })
+statusbars.onZero(StatusBarKind.EnemyHealth, function (status) {
+    sprites.destroy(myEnemy)
+})
 statusbars.onZero(StatusBarKind.Health, function (status) {
     sprites.destroy(mySprite)
 })
@@ -985,7 +988,12 @@ function give_weapon (idx: number) {
     weapon_drop.lifespan = 1000000
 }
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, otherSprite) {
-    sprites.destroy(myEnemy)
+    statusbar2.value += -34
+    pause(1000)
+})
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (sprite, otherSprite) {
+    statusbar.value += -34
+    pause(1000)
 })
 let weapon_drop: Sprite = null
 let mySprite3: Sprite = null
@@ -1006,6 +1014,8 @@ let weapon_labels: string[] = []
 let all_weapons: Image[] = []
 let all_labels: string[] = []
 let all_items: Image[] = []
+let statusbar2: StatusBarSprite = null
+let statusbar: StatusBarSprite = null
 let myEnemy: Sprite = null
 let mySprite: Sprite = null
 make_toolbar()
@@ -1154,9 +1164,13 @@ scene.setBackgroundImage(img`
     bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
     bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
     `)
-let statusbar = statusbars.create(40, 10, StatusBarKind.Health)
+statusbar = statusbars.create(40, 10, StatusBarKind.Health)
 statusbar.setStatusBarFlag(StatusBarFlag.SmoothTransition, true)
 statusbar.setBarBorder(2, 15)
+statusbar2 = statusbars.create(20, 6, StatusBarKind.EnemyHealth)
+statusbar2.attachToSprite(myEnemy)
+statusbar2.setStatusBarFlag(StatusBarFlag.SmoothTransition, true)
+statusbar2.setBarBorder(1, 15)
 statusbar.left = 30
 statusbar.bottom = 112
 all_items = [img`
@@ -1214,6 +1228,11 @@ all_weapons = [img`
     . . . . . . c c c c c c b b 4 . 
     `]
 weapon_labels = ["pizza", "lemon"]
+for (let index = 0; index <= all_weapons.length - 1; index++) {
+    for (let index2 = 0; index2 < 1; index2++) {
+        give_weapon(index)
+    }
+}
 // basic movements
 forever(function () {
     while (controller.right.isPressed()) {
@@ -1528,8 +1547,4 @@ forever(function () {
 forever(function () {
     myEnemy.follow(mySprite, 10)
     myEnemy.setBounceOnWall(true)
-    if (myEnemy.overlapsWith(mySprite)) {
-        statusbar.value += -34
-        pause(1000)
-    }
 })
